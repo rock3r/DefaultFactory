@@ -5,22 +5,28 @@ import org.threeten.bp.format.DateTimeFormatter
 import org.threeten.bp.format.FormatStyle
 
 
-class DateStringProvider internal constructor(private val factory: Factory) {
+class DateStringProvider internal constructor(private val formatter: Formatter = DefaultFormatter) {
 
-    constructor() : this(DefaultFactory)
+    fun buildDateString(dateTime: DateTime) =
+            formatter.format(dateTime)
 
-    fun buildDateString() =
-            factory.getLocalisedDateTimeFormatter().format(factory.getLocalDateTime()) as String
+    private object DefaultFormatter : Formatter {
 
-    internal interface Factory {
-        fun getLocalDateTime(): LocalDateTime
-        fun getLocalisedDateTimeFormatter(): DateTimeFormatter
+        private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
+
+        override fun format(instant: DateTime): String =
+                dateTimeFormatter.format(instant.asLocalDateTime())
     }
+}
 
-    private object DefaultFactory : Factory {
-        override fun getLocalisedDateTimeFormatter(): DateTimeFormatter =
-                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
+interface Formatter {
+    fun format(instant: DateTime): String
+}
 
-        override fun getLocalDateTime(): LocalDateTime = LocalDateTime.now()
-    }
+abstract class DateTime {
+    abstract internal fun asLocalDateTime(): LocalDateTime
+}
+
+internal class ThreeTenDateTime(private val wrappedDateTime: LocalDateTime) : DateTime() {
+    override fun asLocalDateTime(): LocalDateTime = wrappedDateTime
 }
